@@ -1,22 +1,22 @@
-import { Response, Request } from 'express'
+import { Request, Response } from 'express'
 
 const cookieName = 'authorization'
 
-class sessToken {
-  static getToken (req: Request): string {
+class SessToken {
+  public static getToken(req: Request): string {
     return req.cookies[cookieName]
   }
 
-  static setToken (res: Response, token: string): void {
+  public static setToken(res: Response, token: string): void {
     res.cookie(cookieName, token, {
       httpOnly: true,
-      maxAge: 604800 
+      maxAge: 60 * 60 * 24 * 7 * 1000,
     })
     res.cookie('isLogin', true, {
       httpOnly: false,
-      maxAge: 604800
+      maxAge: 60 * 60 * 24 * 7 * 1000,
     })
   }
 }
 
-export default sessToken
+export default SessToken
