@@ -1,8 +1,11 @@
 import { Router } from 'express'
 import passport from 'passport'
-import { LoginCheck, sessToken } from '../api'
-import { Error, Token } from '../api/LoginCheck';
+import { JWT, LoginCheck, sessToken } from '../api'
+import { Error, Token } from '../api/LoginCheck'
+import * as db from '../db'
 
+import { IOAuthUser } from '../api/jwt'
+import { IOAuth } from '../db/model/oauth'
 import * as auth from '../strategy'
 
 const router = Router()
@@ -49,25 +52,86 @@ router.get('/check', async (req, res) => {
 
       return
     }
-  } catch(error) {
+  } catch (error) {
+    throw error
+  }
+})
+
+router.get('/renew', async (req, res) => {
+  try {
+    let payload
+
+    const token = await LoginCheck(sessToken.getToken(req))
+
+    if (!(token as Error).status) {
+      const [userInfo, oauth] = await Promise.all([
+        db.User.findById((token as Token).id),
+        db.OAuth.findByUserId((token as Token).id),
+      ])
+
+      if (userInfo) {
+        const { id, nickname, isAdmin } = userInfo
+
+        const oauthinfo: { [key: string]: IOAuthUser } = {};
+
+        (oauth as IOAuth[]).forEach((value) => {
+          oauthinfo[value.vendor] = {
+            id: value.OAuthId,
+            profilePhoto: value.profilePhoto,
+            username: value.username,
+            displayName: value.displayName,
+          }
+        })
+
+        const jwtPayload = {
+          id, nickname, isAdmin,
+          auth: oauthinfo,
+        }
+
+        const refreshedToken = await JWT.createToken(jwtPayload) // create jwt token
+
+        sessToken.setToken(res, refreshedToken)
+
+        res.status(200)
+          .json(await JWT.verifyToken(refreshedToken))
+          .end()
+      } else {
+        payload = {
+          error: true,
+          message: 'user not found',
+        }
+
+        sessToken.removeToken(res)
+
+        res.status(404)
+          .json(payload)
+          .end()
+      }
+    } else {
+      payload = {
+        error: true,
+        message: 'Please log in',
+      }
+
+      sessToken.removeToken(res)
+
+      res.status(404)
+        .json(payload)
+        .end()
+    }
+
+    res.jsonp(payload)
+    res.end()
+  } catch (error) {
     throw error
   }
 })
 
 router.get('/logout', async (req, res) => {
   try {
-    const token = await LoginCheck(sessToken.getToken(req))
+    sessToken.removeToken(res)
 
-    if ((token as Error).status === 'Please log in') {
-      res.status(400)
-        .json(token)
-        .end()
-    } else {
-      res.clearCookie('authorization')
-      res.clearCookie('isLogin')
-
-      res.redirect(302, '/')
-    }
+    res.redirect(302, process.env.homepage!)
   } catch (error) {
     throw error
   }

@@ -17,6 +17,11 @@ class SessToken {
       maxAge: 60 * 60 * 24 * 7 * 1000,
     })
   }
+
+  public static removeToken(res: Response): void {
+    res.clearCookie('authorization')
+    res.clearCookie('isLogin')
+  }
 }
 
 export default SessToken
