@@ -34,7 +34,7 @@
     "passport-twitch": "^1.0.3",
     "redis": "^2.8.0",
     "rest-url-builder": "^1.0.6",
-    "sequelize": "^5.8.7"
+    "sequelize": "^5.15.1"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.27",
