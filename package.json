@@ -17,7 +17,7 @@
     "dev": "ts-node ./src/index.ts"
   },
   "dependencies": {
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "bluebird": "^3.5.5",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.4",
